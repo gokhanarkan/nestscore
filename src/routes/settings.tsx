@@ -8,6 +8,7 @@ import { Slider } from "@/components/ui/slider";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { db } from "@/lib/db";
+import { exportToCSV, downloadCSV } from "@/lib/export";
 import { useState, useEffect, useCallback } from "react";
 import { Loader2, Check, MapPin } from "lucide-react";
 
@@ -63,7 +64,7 @@ function SettingsPage() {
     return () => clearTimeout(timer);
   }, [workPostcode, settings.workPostcode, checkAndSavePostcode]);
 
-  const handleExport = async () => {
+  const handleExportJSON = async () => {
     try {
       const properties = await db.properties.toArray();
       const data = { properties, settings, exportedAt: new Date().toISOString() };
@@ -74,7 +75,24 @@ function SettingsPage() {
       a.download = `nestscore-backup-${new Date().toISOString().split("T")[0]}.json`;
       a.click();
       URL.revokeObjectURL(url);
-      setExportStatus("Exported successfully!");
+      setExportStatus("JSON exported!");
+      setTimeout(() => setExportStatus(null), 3000);
+    } catch {
+      setExportStatus("Export failed");
+    }
+  };
+
+  const handleExportCSV = async () => {
+    try {
+      const properties = await db.properties.toArray();
+      if (properties.length === 0) {
+        setExportStatus("No properties to export");
+        setTimeout(() => setExportStatus(null), 3000);
+        return;
+      }
+      const csv = exportToCSV(properties, settings);
+      downloadCSV(csv, `nestscore-${new Date().toISOString().split("T")[0]}.csv`);
+      setExportStatus("CSV exported!");
       setTimeout(() => setExportStatus(null), 3000);
     } catch {
       setExportStatus("Export failed");
@@ -206,10 +224,11 @@ function SettingsPage() {
               <p className="text-sm text-primary">{exportStatus}</p>
             )}
             <div className="flex flex-wrap gap-3">
-              <Button onClick={handleExport}>Export Data</Button>
+              <Button onClick={handleExportJSON}>Export JSON</Button>
+              <Button variant="outline" onClick={handleExportCSV}>Export CSV</Button>
               <Button variant="outline" asChild>
                 <label className="cursor-pointer">
-                  Import Data
+                  Import JSON
                   <input
                     type="file"
                     accept=".json"
@@ -218,6 +237,8 @@ function SettingsPage() {
                   />
                 </label>
               </Button>
+            </div>
+            <div className="pt-2">
               <Button variant="destructive" onClick={handleClearAll}>
                 Clear All Data
               </Button>

@@ -1,6 +1,6 @@
 import { Outlet, createRootRoute, Link, useLocation } from "@tanstack/react-router";
 import { motion, AnimatePresence } from "framer-motion";
-import { Home, List, GitCompare, Settings, Plus } from "lucide-react";
+import { Home, List, GitCompare, Map, Settings, Plus } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export const Route = createRootRoute({
@@ -10,6 +10,7 @@ export const Route = createRootRoute({
 const navItems = [
   { to: "/", icon: Home, label: "Home" },
   { to: "/properties", icon: List, label: "Properties" },
+  { to: "/map", icon: Map, label: "Map" },
   { to: "/compare", icon: GitCompare, label: "Compare" },
   { to: "/settings", icon: Settings, label: "Settings" },
 ] as const;

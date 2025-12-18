@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from "./routes/__root"
 import { Route as SettingsRouteImport } from "./routes/settings"
+import { Route as MapRouteImport } from "./routes/map"
 import { Route as CompareRouteImport } from "./routes/compare"
 import { Route as IndexRouteImport } from "./routes/index"
 import { Route as PropertiesIndexRouteImport } from "./routes/properties/index"
@@ -19,6 +20,11 @@ import { Route as PropertiesIdRouteImport } from "./routes/properties/$id"
 const SettingsRoute = SettingsRouteImport.update({
   id: "/settings",
   path: "/settings",
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MapRoute = MapRouteImport.update({
+  id: "/map",
+  path: "/map",
   getParentRoute: () => rootRouteImport,
 } as any)
 const CompareRoute = CompareRouteImport.update({
@@ -50,6 +56,7 @@ const PropertiesIdRoute = PropertiesIdRouteImport.update({
 export interface FileRoutesByFullPath {
   "/": typeof IndexRoute
   "/compare": typeof CompareRoute
+  "/map": typeof MapRoute
   "/settings": typeof SettingsRoute
   "/properties/$id": typeof PropertiesIdRoute
   "/properties/new": typeof PropertiesNewRoute
@@ -58,6 +65,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   "/": typeof IndexRoute
   "/compare": typeof CompareRoute
+  "/map": typeof MapRoute
   "/settings": typeof SettingsRoute
   "/properties/$id": typeof PropertiesIdRoute
   "/properties/new": typeof PropertiesNewRoute
@@ -67,6 +75,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   "/": typeof IndexRoute
   "/compare": typeof CompareRoute
+  "/map": typeof MapRoute
   "/settings": typeof SettingsRoute
   "/properties/$id": typeof PropertiesIdRoute
   "/properties/new": typeof PropertiesNewRoute
@@ -77,6 +86,7 @@ export interface FileRouteTypes {
   fullPaths:
     | "/"
     | "/compare"
+    | "/map"
     | "/settings"
     | "/properties/$id"
     | "/properties/new"
@@ -85,6 +95,7 @@ export interface FileRouteTypes {
   to:
     | "/"
     | "/compare"
+    | "/map"
     | "/settings"
     | "/properties/$id"
     | "/properties/new"
@@ -93,6 +104,7 @@ export interface FileRouteTypes {
     | "__root__"
     | "/"
     | "/compare"
+    | "/map"
     | "/settings"
     | "/properties/$id"
     | "/properties/new"
@@ -102,6 +114,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   CompareRoute: typeof CompareRoute
+  MapRoute: typeof MapRoute
   SettingsRoute: typeof SettingsRoute
   PropertiesIdRoute: typeof PropertiesIdRoute
   PropertiesNewRoute: typeof PropertiesNewRoute
@@ -115,6 +128,13 @@ declare module "@tanstack/react-router" {
       path: "/settings"
       fullPath: "/settings"
       preLoaderRoute: typeof SettingsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    "/map": {
+      id: "/map"
+      path: "/map"
+      fullPath: "/map"
+      preLoaderRoute: typeof MapRouteImport
       parentRoute: typeof rootRouteImport
     }
     "/compare": {
@@ -158,6 +178,7 @@ declare module "@tanstack/react-router" {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   CompareRoute: CompareRoute,
+  MapRoute: MapRoute,
   SettingsRoute: SettingsRoute,
   PropertiesIdRoute: PropertiesIdRoute,
   PropertiesNewRoute: PropertiesNewRoute,

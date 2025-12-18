@@ -7,7 +7,8 @@ import { ScoreGauge } from "@/components/scoring/score-gauge";
 import { ScoreRadar } from "@/components/visualization/score-radar";
 import { CategorySection } from "@/components/property/category-section";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Label } from "@/components/ui/label";
 import {
   Dialog,
   DialogContent,
@@ -17,8 +18,8 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { ArrowLeft, Trash2, MapPin, Navigation } from "lucide-react";
-import { useState, useMemo } from "react";
+import { ArrowLeft, Trash2, MapPin, Navigation, StickyNote } from "lucide-react";
+import { useState, useMemo, useRef, useEffect } from "react";
 import { calculateDistance, formatDistance } from "@/lib/postcode";
 
 export const Route = createFileRoute("/properties/$id")({
@@ -31,6 +32,14 @@ function PropertyDetailPage() {
   const property = useProperty(parseInt(id, 10));
   const settings = useSettings();
   const [deleteOpen, setDeleteOpen] = useState(false);
+  const [notes, setNotes] = useState("");
+  const notesTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    if (property) {
+      setNotes(property.notes || "");
+    }
+  }, [property]);
 
   const score = useMemo(() => {
     if (!property) return null;
@@ -53,6 +62,16 @@ function PropertyDetailPage() {
   const handleAnswerChange = async (questionId: string, value: string | boolean | number) => {
     const newAnswers = { ...property.answers, [questionId]: value };
     await updateProperty(property.id!, { answers: newAnswers });
+  };
+
+  const handleNotesChange = (value: string) => {
+    setNotes(value);
+    if (notesTimeoutRef.current) {
+      clearTimeout(notesTimeoutRef.current);
+    }
+    notesTimeoutRef.current = setTimeout(async () => {
+      await updateProperty(property.id!, { notes: value });
+    }, 500);
   };
 
   const handleDelete = async () => {
@@ -155,6 +174,31 @@ function PropertyDetailPage() {
           );
         })}
       </div>
+
+      {/* Notes Section */}
+      <Card className="mt-6">
+        <CardHeader className="pb-3">
+          <CardTitle className="flex items-center gap-2 text-lg">
+            <StickyNote className="h-4 w-4" />
+            Notes
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <Label htmlFor="notes" className="sr-only">
+            Property notes
+          </Label>
+          <textarea
+            id="notes"
+            placeholder="Add your notes about this property..."
+            value={notes}
+            onChange={(e) => handleNotesChange(e.target.value)}
+            className="min-h-30 w-full resize-none rounded-lg border border-input bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+          />
+          <p className="mt-2 text-xs text-muted-foreground">
+            Notes are saved automatically
+          </p>
+        </CardContent>
+      </Card>
     </div>
   );
 }
