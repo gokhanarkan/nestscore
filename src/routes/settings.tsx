@@ -6,8 +6,9 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { db } from "@/lib/db";
 import { exportToCSV, downloadCSV } from "@/lib/export";
+import { loadSampleProperties, removeSampleProperties, hasSampleProperties } from "@/lib/sample-data";
 import { useState, useEffect, useCallback } from "react";
-import { Loader2, Check, MapPin, Settings as SettingsIcon, Scale, Briefcase, Database, Download, Upload, Trash2, AlertCircle } from "lucide-react";
+import { Loader2, Check, MapPin, Settings as SettingsIcon, Scale, Briefcase, Database, Download, Upload, Trash2, AlertCircle, Sparkles, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/settings")({
@@ -20,10 +21,16 @@ function SettingsPage() {
   const [workPostcode, setWorkPostcode] = useState(settings.workPostcode ?? "");
   const [postcodeStatus, setPostcodeStatus] = useState<"idle" | "checking" | "valid" | "invalid">("idle");
   const [focusedField, setFocusedField] = useState<string | null>(null);
+  const [hasSamples, setHasSamples] = useState(false);
+  const [loadingSamples, setLoadingSamples] = useState(false);
 
   useEffect(() => {
     setWorkPostcode(settings.workPostcode ?? "");
   }, [settings.workPostcode]);
+
+  useEffect(() => {
+    hasSampleProperties().then(setHasSamples);
+  }, []);
 
   const totalWeight = Object.values(settings.weights).reduce((a, b) => a + b, 0);
   const isWeightValid = totalWeight === 100;
@@ -134,8 +141,39 @@ function SettingsPage() {
   const handleClearAll = async () => {
     if (confirm("Are you sure you want to delete all properties? This cannot be undone.")) {
       await db.properties.clear();
+      setHasSamples(false);
       setExportStatus("All properties deleted");
       setTimeout(() => setExportStatus(null), 3000);
+    }
+  };
+
+  const handleLoadSamples = async () => {
+    setLoadingSamples(true);
+    try {
+      const count = await loadSampleProperties();
+      setHasSamples(true);
+      setExportStatus(`Loaded ${count} sample properties!`);
+      setTimeout(() => setExportStatus(null), 3000);
+    } catch {
+      setExportStatus("Failed to load samples");
+      setTimeout(() => setExportStatus(null), 3000);
+    } finally {
+      setLoadingSamples(false);
+    }
+  };
+
+  const handleRemoveSamples = async () => {
+    setLoadingSamples(true);
+    try {
+      const count = await removeSampleProperties();
+      setHasSamples(false);
+      setExportStatus(`Removed ${count} sample properties`);
+      setTimeout(() => setExportStatus(null), 3000);
+    } catch {
+      setExportStatus("Failed to remove samples");
+      setTimeout(() => setExportStatus(null), 3000);
+    } finally {
+      setLoadingSamples(false);
     }
   };
 
@@ -323,6 +361,59 @@ function SettingsPage() {
                     Clear All Data
                   </Button>
                 </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Sample Data */}
+          <Card className="border-0 shadow-sm">
+            <CardContent className="p-5 sm:p-6">
+              <div className="mb-5 flex items-center gap-3">
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-green-500/10">
+                  <Sparkles className="h-5 w-5 text-green-500" />
+                </div>
+                <div>
+                  <h2 className="font-semibold">Sample Data</h2>
+                  <p className="text-sm text-muted-foreground">
+                    Load sample London properties to explore the app
+                  </p>
+                </div>
+              </div>
+
+              <div className="space-y-3">
+                {hasSamples ? (
+                  <Button
+                    variant="outline"
+                    onClick={handleRemoveSamples}
+                    disabled={loadingSamples}
+                    className="w-full gap-2"
+                  >
+                    {loadingSamples ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <X className="h-4 w-4" />
+                    )}
+                    Remove Sample Properties
+                  </Button>
+                ) : (
+                  <Button
+                    onClick={handleLoadSamples}
+                    disabled={loadingSamples}
+                    className="w-full gap-2"
+                  >
+                    {loadingSamples ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <Sparkles className="h-4 w-4" />
+                    )}
+                    Load Sample Properties
+                  </Button>
+                )}
+                <p className="text-center text-xs text-muted-foreground">
+                  {hasSamples
+                    ? "Sample properties are loaded. Remove them when you're ready to add your own."
+                    : "Loads 4 sample London properties with pre-filled assessments."}
+                </p>
               </div>
             </CardContent>
           </Card>

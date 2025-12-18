@@ -42,5 +42,10 @@ export async function getSettings(): Promise<Settings> {
 export async function updateSettings(
   updates: Partial<Omit<Settings, "id">>
 ): Promise<void> {
-  await db.settings.update("user-settings", updates);
+  const existing = await db.settings.get("user-settings");
+  if (existing) {
+    await db.settings.update("user-settings", updates);
+  } else {
+    await db.settings.add({ ...defaultSettings, ...updates });
+  }
 }
