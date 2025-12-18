@@ -4,11 +4,11 @@ import { CATEGORIES } from "@/lib/constants";
 import { lookupPostcode } from "@/lib/postcode";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { db } from "@/lib/db";
+import { db, defaultSettings } from "@/lib/db";
 import { exportToCSV, downloadCSV } from "@/lib/export";
 import { loadSampleProperties, removeSampleProperties, hasSampleProperties } from "@/lib/sample-data";
 import { useState, useEffect, useCallback } from "react";
-import { Loader2, Check, MapPin, Settings as SettingsIcon, Scale, Briefcase, Database, Download, Upload, Trash2, AlertCircle, Sparkles, X } from "lucide-react";
+import { Loader2, Check, MapPin, Settings as SettingsIcon, Scale, Briefcase, Database, Download, Upload, Trash2, AlertCircle, Sparkles, X, RotateCcw } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/settings")({
@@ -241,6 +241,18 @@ function SettingsPage() {
                     />
                   </div>
                 ))}
+              </div>
+
+              <div className="mt-6 border-t border-border pt-4">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => updateSettings({ weights: defaultSettings.weights })}
+                  className="gap-2"
+                >
+                  <RotateCcw className="h-4 w-4" />
+                  Reset to Defaults
+                </Button>
               </div>
             </CardContent>
           </Card>
