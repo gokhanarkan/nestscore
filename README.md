@@ -5,9 +5,12 @@ A property evaluation tool for London house hunters. Score, compare, and track p
 ## Features
 
 - **Structured Evaluation**: 37 questions across 10 categories (Location, Amenities, Safety, Building, Utilities, Internet, Energy, Interior, Outdoor, Legal)
-- **Weighted Scoring**: Customise category weights to match your priorities
+- **Weighted Scoring**: Customise category weights to match your priorities (with one-click reset to defaults)
+- **Property Tags**: Organise properties with predefined tags (Shortlisted, Viewed, Rejected, Favourite) and filter your list
+- **Listing URL**: Link properties to their original Rightmove, Zoopla, or estate agent listings
 - **Side-by-Side Comparison**: Compare up to 4 properties with category breakdowns
 - **Map View**: Visualise all properties with score-coloured markers and work location radius
+- **Serverless Sharing**: Share properties and settings via URL or QR code with no server required
 - **Offline-First**: All data stored locally in IndexedDB, works without internet
 - **UK Postcode Validation**: Automatic geocoding via Postcodes.io API
 - **Export/Import**: JSON backup and CSV export for spreadsheet analysis
@@ -19,6 +22,7 @@ A property evaluation tool for London house hunters. Score, compare, and track p
 - **Styling**: Tailwind CSS v4, shadcn/ui components
 - **Data**: Dexie.js (IndexedDB wrapper)
 - **Maps**: React Leaflet with OpenStreetMap tiles
+- **Sharing**: pako (compression), qrcode.react (QR generation)
 - **Icons**: Lucide React
 
 ## Getting Started
@@ -43,26 +47,29 @@ bun run preview
 src/
 ├── components/
 │   ├── scoring/          # Score gauge, category sections
+│   ├── sharing/          # Share modal with URL/QR tabs
 │   ├── ui/               # shadcn/ui components
 │   └── visualization/    # Radar chart
 ├── hooks/
 │   ├── use-properties.ts # Property CRUD operations
 │   └── use-settings.ts   # Settings management
 ├── lib/
-│   ├── constants.ts      # Category definitions & questions
+│   ├── constants.ts      # Categories, questions & tags
 │   ├── db.ts             # Dexie database setup
 │   ├── export.ts         # CSV export utilities
 │   ├── postcode.ts       # UK postcode validation
 │   ├── sample-data.ts    # Sample London properties
-│   └── scoring.ts        # Scoring algorithm
+│   ├── scoring.ts        # Scoring algorithm
+│   └── sharing.ts        # URL encoding/decoding for sharing
 ├── routes/
 │   ├── __root.tsx        # Root layout with navigation
 │   ├── index.tsx         # Home page
 │   ├── compare.tsx       # Property comparison
 │   ├── map.tsx           # Map view
 │   ├── settings.tsx      # Settings & data management
+│   ├── share.tsx         # Import shared data handler
 │   └── properties/
-│       ├── index.tsx     # Property list
+│       ├── index.tsx     # Property list with tag filtering
 │       ├── new.tsx       # Add new property
 │       └── $id.tsx       # Property detail & evaluation
 └── types/
@@ -100,6 +107,19 @@ Each comes with all 37 questions pre-filled.
 ## Data Privacy
 
 All property data is stored locally in your browser's IndexedDB. No data is sent to external servers (except postcode validation requests to Postcodes.io and map tile requests to OpenStreetMap).
+
+## Sharing
+
+NestScore supports sharing properties and settings without any server infrastructure. The share mechanism works by:
+
+1. Serialising the data to JSON
+2. Compressing it with pako (deflate)
+3. Encoding as URL-safe base64
+4. Embedding in the URL as a query parameter
+
+Recipients open the link and can import the data directly into their own NestScore instance. For convenience, a QR code is also generated (data permitting) for easy mobile sharing.
+
+This approach keeps everything client-side whilst still enabling collaboration between partners, friends, or estate agents.
 
 ## Scripts
 
