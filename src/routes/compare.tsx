@@ -8,7 +8,7 @@ import { ScoreGauge } from "@/components/scoring/score-gauge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
-import { Check, X } from "lucide-react";
+import { Check } from "lucide-react";
 
 export const Route = createFileRoute("/compare")({
   component: ComparePage,

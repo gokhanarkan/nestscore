@@ -2,15 +2,13 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useSettings, updateSettings } from "@/hooks/use-settings";
 import { CATEGORIES } from "@/lib/constants";
 import { lookupPostcode } from "@/lib/postcode";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Label } from "@/components/ui/label";
-import { Slider } from "@/components/ui/slider";
-import { Input } from "@/components/ui/input";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { db } from "@/lib/db";
 import { exportToCSV, downloadCSV } from "@/lib/export";
 import { useState, useEffect, useCallback } from "react";
-import { Loader2, Check, MapPin } from "lucide-react";
+import { Loader2, Check, MapPin, Settings as SettingsIcon, Scale, Briefcase, Database, Download, Upload, Trash2, AlertCircle } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/settings")({
   component: SettingsPage,
@@ -21,12 +19,14 @@ function SettingsPage() {
   const [exportStatus, setExportStatus] = useState<string | null>(null);
   const [workPostcode, setWorkPostcode] = useState(settings.workPostcode ?? "");
   const [postcodeStatus, setPostcodeStatus] = useState<"idle" | "checking" | "valid" | "invalid">("idle");
+  const [focusedField, setFocusedField] = useState<string | null>(null);
 
   useEffect(() => {
     setWorkPostcode(settings.workPostcode ?? "");
   }, [settings.workPostcode]);
 
   const totalWeight = Object.values(settings.weights).reduce((a, b) => a + b, 0);
+  const isWeightValid = totalWeight === 100;
 
   const handleWeightChange = async (categoryId: string, value: number) => {
     const newWeights = { ...settings.weights, [categoryId]: value };
@@ -140,111 +140,193 @@ function SettingsPage() {
   };
 
   return (
-    <div className="mx-auto max-w-2xl px-4 py-8">
-      <h1 className="mb-6 text-2xl font-semibold">Settings</h1>
-
-      <div className="space-y-6">
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-lg">Category Weights</CardTitle>
-            <CardDescription>
-              Adjust how much each category affects the overall score. Total: {totalWeight}%
-              {totalWeight !== 100 && (
-                <span className="ml-2 text-destructive">(should be 100%)</span>
-              )}
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            {CATEGORIES.map((category) => (
-              <div key={category.id} className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <Label htmlFor={category.id}>{category.name}</Label>
-                  <span className="text-sm font-medium">{settings.weights[category.id]}%</span>
-                </div>
-                <Slider
-                  id={category.id}
-                  min={0}
-                  max={50}
-                  step={5}
-                  value={[settings.weights[category.id]]}
-                  onValueChange={([value]) => handleWeightChange(category.id, value)}
-                />
-              </div>
-            ))}
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-lg">Work Location</CardTitle>
-            <CardDescription>
-              Set your work postcode to calculate commute distances
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-2">
-              <Label htmlFor="work-postcode">Work Postcode</Label>
-              <div className="relative">
-                <Input
-                  id="work-postcode"
-                  placeholder="e.g., EC2A 4NE"
-                  value={workPostcode}
-                  onChange={(e) => setWorkPostcode(e.target.value.toUpperCase())}
-                  className="pr-10"
-                />
-                <div className="absolute right-3 top-1/2 -translate-y-1/2">
-                  {postcodeStatus === "checking" && (
-                    <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
-                  )}
-                  {postcodeStatus === "valid" && (
-                    <Check className="h-4 w-4 text-green-500" />
-                  )}
-                </div>
-              </div>
-              {postcodeStatus === "valid" && settings.workCoordinates && (
-                <p className="text-xs text-muted-foreground">
-                  <MapPin className="mr-1 inline h-3 w-3" />
-                  Location saved
-                </p>
-              )}
-              {postcodeStatus === "invalid" && workPostcode.length >= 3 && (
-                <p className="text-xs text-destructive">Invalid postcode</p>
-              )}
+    <div className="min-h-screen bg-linear-to-b from-muted/20 to-background">
+      <div className="mx-auto max-w-2xl px-4 py-6 sm:px-6 sm:py-10">
+        {/* Header */}
+        <div className="mb-8">
+          <div className="flex items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10">
+              <SettingsIcon className="h-5 w-5 text-primary" />
             </div>
-          </CardContent>
-        </Card>
+            <div>
+              <h1 className="text-2xl font-semibold tracking-tight">Settings</h1>
+              <p className="text-sm text-muted-foreground">
+                Customize your scoring preferences
+              </p>
+            </div>
+          </div>
+        </div>
 
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-lg">Data Management</CardTitle>
-            <CardDescription>Export or import your property data</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {exportStatus && (
-              <p className="text-sm text-primary">{exportStatus}</p>
-            )}
-            <div className="flex flex-wrap gap-3">
-              <Button onClick={handleExportJSON}>Export JSON</Button>
-              <Button variant="outline" onClick={handleExportCSV}>Export CSV</Button>
-              <Button variant="outline" asChild>
-                <label className="cursor-pointer">
-                  Import JSON
+        <div className="space-y-6">
+          {/* Category Weights */}
+          <Card className="border-0 shadow-sm">
+            <CardContent className="p-5 sm:p-6">
+              <div className="mb-5 flex items-start justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-500/10">
+                    <Scale className="h-5 w-5 text-amber-500" />
+                  </div>
+                  <div>
+                    <h2 className="font-semibold">Category Weights</h2>
+                    <p className="text-sm text-muted-foreground">
+                      Adjust importance of each category
+                    </p>
+                  </div>
+                </div>
+                <div className={cn(
+                  "flex items-center gap-2 rounded-full px-3 py-1.5 text-sm font-medium",
+                  isWeightValid ? "bg-green-500/10 text-green-600" : "bg-destructive/10 text-destructive"
+                )}>
+                  {!isWeightValid && <AlertCircle className="h-4 w-4" />}
+                  {totalWeight}%
+                </div>
+              </div>
+
+              <div className="space-y-5">
+                {CATEGORIES.map((category) => (
+                  <div key={category.id} className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm font-medium">{category.name}</span>
+                      <span className="flex min-w-12 items-center justify-center rounded-lg bg-muted px-2 py-1 text-sm font-semibold tabular-nums">
+                        {settings.weights[category.id]}%
+                      </span>
+                    </div>
+                    <input
+                      type="range"
+                      id={category.id}
+                      min={0}
+                      max={50}
+                      step={5}
+                      value={settings.weights[category.id]}
+                      onChange={(e) => handleWeightChange(category.id, Number(e.target.value))}
+                      className="h-2 w-full cursor-pointer appearance-none rounded-full bg-muted accent-primary [&::-webkit-slider-thumb]:h-5 [&::-webkit-slider-thumb]:w-5 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-primary [&::-webkit-slider-thumb]:shadow-md"
+                    />
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Work Location */}
+          <Card className="border-0 shadow-sm">
+            <CardContent className="p-5 sm:p-6">
+              <div className="mb-5 flex items-center gap-3">
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-500/10">
+                  <Briefcase className="h-5 w-5 text-blue-500" />
+                </div>
+                <div>
+                  <h2 className="font-semibold">Work Location</h2>
+                  <p className="text-sm text-muted-foreground">
+                    Set your work postcode for commute calculations
+                  </p>
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <div
+                  className={cn(
+                    "flex items-center gap-3 rounded-xl border bg-background px-4 py-3 transition-all",
+                    focusedField === "postcode"
+                      ? "border-primary ring-4 ring-primary/10"
+                      : "border-border hover:border-muted-foreground/30"
+                  )}
+                >
+                  <MapPin className="h-5 w-5 shrink-0 text-muted-foreground" />
                   <input
-                    type="file"
-                    accept=".json"
-                    className="hidden"
-                    onChange={handleImport}
+                    id="work-postcode"
+                    type="text"
+                    placeholder="e.g., EC2A 4NE"
+                    value={workPostcode}
+                    onChange={(e) => setWorkPostcode(e.target.value.toUpperCase())}
+                    onFocus={() => setFocusedField("postcode")}
+                    onBlur={() => setFocusedField(null)}
+                    className="flex-1 bg-transparent text-base uppercase outline-none placeholder:text-muted-foreground/60 placeholder:normal-case"
                   />
-                </label>
-              </Button>
-            </div>
-            <div className="pt-2">
-              <Button variant="destructive" onClick={handleClearAll}>
-                Clear All Data
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
+                  <div className="flex h-5 w-5 items-center justify-center">
+                    {postcodeStatus === "checking" && (
+                      <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+                    )}
+                    {postcodeStatus === "valid" && (
+                      <div className="flex h-5 w-5 items-center justify-center rounded-full bg-green-500/10">
+                        <Check className="h-3.5 w-3.5 text-green-600" />
+                      </div>
+                    )}
+                  </div>
+                </div>
+                {postcodeStatus === "valid" && settings.workCoordinates && (
+                  <p className="flex items-center gap-1.5 text-sm text-green-600">
+                    <Check className="h-3.5 w-3.5" />
+                    Location saved
+                  </p>
+                )}
+                {postcodeStatus === "invalid" && workPostcode.length >= 3 && (
+                  <p className="text-sm text-destructive">
+                    Invalid postcode - please check and try again
+                  </p>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Data Management */}
+          <Card className="border-0 shadow-sm">
+            <CardContent className="p-5 sm:p-6">
+              <div className="mb-5 flex items-center gap-3">
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-purple-500/10">
+                  <Database className="h-5 w-5 text-purple-500" />
+                </div>
+                <div>
+                  <h2 className="font-semibold">Data Management</h2>
+                  <p className="text-sm text-muted-foreground">
+                    Export or import your property data
+                  </p>
+                </div>
+              </div>
+
+              {exportStatus && (
+                <div className="mb-4 flex items-center gap-2 rounded-lg bg-primary/10 px-4 py-3 text-sm font-medium text-primary">
+                  <Check className="h-4 w-4" />
+                  {exportStatus}
+                </div>
+              )}
+
+              <div className="space-y-3">
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <Button onClick={handleExportJSON} className="w-full gap-2">
+                    <Download className="h-4 w-4" />
+                    Export JSON
+                  </Button>
+                  <Button variant="outline" onClick={handleExportCSV} className="w-full gap-2">
+                    <Download className="h-4 w-4" />
+                    Export CSV
+                  </Button>
+                </div>
+                <Button variant="outline" asChild className="w-full gap-2">
+                  <label className="cursor-pointer">
+                    <Upload className="h-4 w-4" />
+                    Import JSON Backup
+                    <input
+                      type="file"
+                      accept=".json"
+                      className="hidden"
+                      onChange={handleImport}
+                    />
+                  </label>
+                </Button>
+                <div className="pt-3">
+                  <Button
+                    variant="outline"
+                    onClick={handleClearAll}
+                    className="w-full gap-2 border-destructive/30 text-destructive hover:bg-destructive/10 hover:text-destructive"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                    Clear All Data
+                  </Button>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
       </div>
     </div>
   );

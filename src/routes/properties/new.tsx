@@ -1,12 +1,10 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useState, useEffect, useCallback } from "react";
 import { addProperty } from "@/hooks/use-properties";
 import { lookupPostcode, autocompletePostcode } from "@/lib/postcode";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { ArrowLeft, Loader2, MapPin, Check } from "lucide-react";
+import { ArrowLeft, Loader2, MapPin, Check, Home, PoundSterling, Building2, MapPinned } from "lucide-react";
+import { cn } from "@/lib/utils";
 import type { Coordinates } from "@/types";
 
 export const Route = createFileRoute("/properties/new")({
@@ -20,6 +18,7 @@ function NewPropertyPage() {
   const [suggestions, setSuggestions] = useState<string[]>([]);
   const [coordinates, setCoordinates] = useState<Coordinates | undefined>();
   const [area, setArea] = useState<string>("");
+  const [focusedField, setFocusedField] = useState<string | null>(null);
 
   const [form, setForm] = useState({
     name: "",
@@ -103,125 +102,256 @@ function NewPropertyPage() {
     setSuggestions([]);
   };
 
-  return (
-    <div className="mx-auto max-w-lg px-4 py-8">
-      <button
-        onClick={() => navigate({ to: "/properties" })}
-        className="mb-6 flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground"
-      >
-        <ArrowLeft className="h-4 w-4" />
-        Back
-      </button>
+  const formatPrice = (value: string) => {
+    const num = parseInt(value.replace(/,/g, ""), 10);
+    if (isNaN(num)) return "";
+    return num.toLocaleString();
+  };
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Add Property</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="name">Property Name *</Label>
-              <Input
+  const isFormValid = form.name.trim() && form.postcode.trim();
+
+  return (
+    <div className="min-h-screen bg-linear-to-b from-muted/30 to-background">
+      <div className="mx-auto max-w-xl px-4 py-6 sm:px-6 sm:py-10">
+        {/* Header */}
+        <div className="mb-8 flex items-center justify-between">
+          <Link
+            to="/properties"
+            className="flex items-center gap-2 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            <span className="hidden sm:inline">Back to Properties</span>
+            <span className="sm:hidden">Back</span>
+          </Link>
+        </div>
+
+        {/* Title */}
+        <div className="mb-8 text-center">
+          <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10">
+            <Home className="h-7 w-7 text-primary" />
+          </div>
+          <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">Add Property</h1>
+          <p className="mt-2 text-sm text-muted-foreground">
+            Enter property details to start your evaluation
+          </p>
+        </div>
+
+        {/* Form */}
+        <form onSubmit={handleSubmit} className="space-y-5">
+          {/* Property Name */}
+          <div className="group">
+            <label
+              htmlFor="name"
+              className="mb-2 block text-sm font-medium text-foreground"
+            >
+              Property Name
+            </label>
+            <div
+              className={cn(
+                "flex items-center gap-3 rounded-xl border bg-card px-4 py-3 transition-all",
+                focusedField === "name"
+                  ? "border-primary ring-4 ring-primary/10"
+                  : "border-border hover:border-muted-foreground/30"
+              )}
+            >
+              <Home className="h-5 w-5 shrink-0 text-muted-foreground" />
+              <input
                 id="name"
+                type="text"
                 placeholder="e.g., 2 Bed Flat in Hackney"
                 value={form.name}
                 onChange={(e) => updateField("name", e.target.value)}
-                required
+                onFocus={() => setFocusedField("name")}
+                onBlur={() => setFocusedField(null)}
+                className="flex-1 bg-transparent text-base outline-none placeholder:text-muted-foreground/60"
               />
             </div>
+          </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="postcode">Postcode *</Label>
-              <div className="relative">
-                <Input
+          {/* Postcode */}
+          <div className="group">
+            <label
+              htmlFor="postcode"
+              className="mb-2 block text-sm font-medium text-foreground"
+            >
+              Postcode
+            </label>
+            <div className="relative">
+              <div
+                className={cn(
+                  "flex items-center gap-3 rounded-xl border bg-card px-4 py-3 transition-all",
+                  focusedField === "postcode"
+                    ? "border-primary ring-4 ring-primary/10"
+                    : "border-border hover:border-muted-foreground/30"
+                )}
+              >
+                <MapPinned className="h-5 w-5 shrink-0 text-muted-foreground" />
+                <input
                   id="postcode"
+                  type="text"
                   placeholder="e.g., E8 1AB"
                   value={form.postcode}
                   onChange={(e) => updateField("postcode", e.target.value.toUpperCase())}
-                  className="pr-10"
-                  required
+                  onFocus={() => setFocusedField("postcode")}
+                  onBlur={() => setTimeout(() => setFocusedField(null), 150)}
+                  className="flex-1 bg-transparent text-base uppercase outline-none placeholder:text-muted-foreground/60 placeholder:normal-case"
                 />
-                <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                <div className="flex h-5 w-5 items-center justify-center">
                   {postcodeStatus === "checking" && (
                     <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
                   )}
                   {postcodeStatus === "valid" && (
-                    <Check className="h-4 w-4 text-green-500" />
+                    <div className="flex h-5 w-5 items-center justify-center rounded-full bg-green-500/10">
+                      <Check className="h-3.5 w-3.5 text-green-600" />
+                    </div>
                   )}
                 </div>
-
-                {suggestions.length > 0 && (
-                  <div className="absolute top-full left-0 right-0 z-10 mt-1 rounded-lg border border-border bg-card shadow-lg">
-                    {suggestions.map((suggestion) => (
-                      <button
-                        key={suggestion}
-                        type="button"
-                        onClick={() => selectSuggestion(suggestion)}
-                        className="flex w-full items-center gap-2 px-3 py-2 text-sm hover:bg-accent"
-                      >
-                        <MapPin className="h-3.5 w-3.5 text-muted-foreground" />
-                        {suggestion}
-                      </button>
-                    ))}
-                  </div>
-                )}
               </div>
-              {postcodeStatus === "valid" && area && (
-                <p className="text-xs text-muted-foreground">
-                  <MapPin className="mr-1 inline h-3 w-3" />
-                  {area}
-                </p>
-              )}
-              {postcodeStatus === "invalid" && form.postcode.length >= 3 && (
-                <p className="text-xs text-destructive">Invalid postcode</p>
+
+              {/* Suggestions Dropdown */}
+              {suggestions.length > 0 && focusedField === "postcode" && (
+                <div className="absolute left-0 right-0 top-full z-20 mt-2 overflow-hidden rounded-xl border border-border bg-card shadow-xl">
+                  {suggestions.map((suggestion, index) => (
+                    <button
+                      key={suggestion}
+                      type="button"
+                      onClick={() => selectSuggestion(suggestion)}
+                      className={cn(
+                        "flex w-full items-center gap-3 px-4 py-3 text-left transition-colors hover:bg-accent",
+                        index !== suggestions.length - 1 && "border-b border-border/50"
+                      )}
+                    >
+                      <MapPin className="h-4 w-4 text-muted-foreground" />
+                      <span className="font-medium">{suggestion}</span>
+                    </button>
+                  ))}
+                </div>
               )}
             </div>
+            {postcodeStatus === "valid" && area && (
+              <p className="mt-2 flex items-center gap-1.5 text-sm text-green-600">
+                <MapPin className="h-3.5 w-3.5" />
+                {area}
+              </p>
+            )}
+            {postcodeStatus === "invalid" && form.postcode.length >= 3 && (
+              <p className="mt-2 text-sm text-destructive">
+                Invalid postcode - please check and try again
+              </p>
+            )}
+          </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="address">Full Address</Label>
-              <Input
+          {/* Full Address */}
+          <div className="group">
+            <label
+              htmlFor="address"
+              className="mb-2 block text-sm font-medium text-foreground"
+            >
+              Full Address <span className="text-muted-foreground">(optional)</span>
+            </label>
+            <div
+              className={cn(
+                "flex items-center gap-3 rounded-xl border bg-card px-4 py-3 transition-all",
+                focusedField === "address"
+                  ? "border-primary ring-4 ring-primary/10"
+                  : "border-border hover:border-muted-foreground/30"
+              )}
+            >
+              <MapPin className="h-5 w-5 shrink-0 text-muted-foreground" />
+              <input
                 id="address"
-                placeholder="e.g., 123 Mare Street"
+                type="text"
+                placeholder="e.g., 123 Mare Street, London"
                 value={form.address}
                 onChange={(e) => updateField("address", e.target.value)}
+                onFocus={() => setFocusedField("address")}
+                onBlur={() => setFocusedField(null)}
+                className="flex-1 bg-transparent text-base outline-none placeholder:text-muted-foreground/60"
               />
             </div>
+          </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="price">Price (£)</Label>
-              <Input
+          {/* Price */}
+          <div className="group">
+            <label
+              htmlFor="price"
+              className="mb-2 block text-sm font-medium text-foreground"
+            >
+              Price <span className="text-muted-foreground">(optional)</span>
+            </label>
+            <div
+              className={cn(
+                "flex items-center gap-3 rounded-xl border bg-card px-4 py-3 transition-all",
+                focusedField === "price"
+                  ? "border-primary ring-4 ring-primary/10"
+                  : "border-border hover:border-muted-foreground/30"
+              )}
+            >
+              <PoundSterling className="h-5 w-5 shrink-0 text-muted-foreground" />
+              <input
                 id="price"
                 type="text"
                 inputMode="numeric"
-                placeholder="e.g., 450000"
-                value={form.price}
+                placeholder="e.g., 450,000"
+                value={form.price ? formatPrice(form.price) : ""}
                 onChange={(e) => updateField("price", e.target.value.replace(/[^0-9]/g, ""))}
+                onFocus={() => setFocusedField("price")}
+                onBlur={() => setFocusedField(null)}
+                className="flex-1 bg-transparent text-base outline-none placeholder:text-muted-foreground/60"
               />
             </div>
+          </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="agent">Estate Agent</Label>
-              <Input
+          {/* Estate Agent */}
+          <div className="group">
+            <label
+              htmlFor="agent"
+              className="mb-2 block text-sm font-medium text-foreground"
+            >
+              Estate Agent <span className="text-muted-foreground">(optional)</span>
+            </label>
+            <div
+              className={cn(
+                "flex items-center gap-3 rounded-xl border bg-card px-4 py-3 transition-all",
+                focusedField === "agent"
+                  ? "border-primary ring-4 ring-primary/10"
+                  : "border-border hover:border-muted-foreground/30"
+              )}
+            >
+              <Building2 className="h-5 w-5 shrink-0 text-muted-foreground" />
+              <input
                 id="agent"
+                type="text"
                 placeholder="e.g., Foxtons"
                 value={form.agent}
                 onChange={(e) => updateField("agent", e.target.value)}
+                onFocus={() => setFocusedField("agent")}
+                onBlur={() => setFocusedField(null)}
+                className="flex-1 bg-transparent text-base outline-none placeholder:text-muted-foreground/60"
               />
             </div>
+          </div>
 
-            <Button type="submit" className="w-full" disabled={loading || !form.name || !form.postcode}>
+          {/* Submit Button */}
+          <div className="pt-4">
+            <Button
+              type="submit"
+              size="lg"
+              disabled={loading || !isFormValid}
+              className="w-full rounded-xl py-6 text-base font-semibold"
+            >
               {loading ? (
                 <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Adding...
+                  <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                  Adding Property...
                 </>
               ) : (
                 "Add Property"
               )}
             </Button>
-          </form>
-        </CardContent>
-      </Card>
+          </div>
+        </form>
+      </div>
     </div>
   );
 }

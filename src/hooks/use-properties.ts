@@ -14,11 +14,12 @@ export async function addProperty(
   property: Omit<Property, "id" | "createdAt" | "updatedAt">
 ): Promise<number> {
   const now = new Date();
-  return db.properties.add({
+  const id = await db.properties.add({
     ...property,
     createdAt: now,
     updatedAt: now,
   } as Property);
+  return id as number;
 }
 
 export async function updateProperty(

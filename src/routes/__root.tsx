@@ -1,6 +1,6 @@
 import { Outlet, createRootRoute, Link, useLocation } from "@tanstack/react-router";
 import { motion, AnimatePresence } from "framer-motion";
-import { Home, List, GitCompare, Map, Settings, Plus } from "lucide-react";
+import { Home, List, GitCompare, Map, Settings } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export const Route = createRootRoute({
@@ -16,9 +16,9 @@ const navItems = [
 ] as const;
 
 const pageVariants = {
-  initial: { opacity: 0, y: 10 },
+  initial: { opacity: 0, y: 8 },
   animate: { opacity: 1, y: 0 },
-  exit: { opacity: 0, y: -10 },
+  exit: { opacity: 0, y: -8 },
 };
 
 function RootLayout() {
@@ -26,7 +26,42 @@ function RootLayout() {
 
   return (
     <div className="min-h-screen bg-background">
-      <main className="pb-20 md:pb-0 md:pl-20">
+      {/* Desktop top header */}
+      <header className="fixed left-0 right-0 top-0 z-50 hidden h-14 items-center border-b border-border/50 bg-background/80 backdrop-blur-xl md:flex">
+        <div className="mx-auto flex w-full max-w-6xl items-center justify-between px-6">
+          <Link to="/" className="flex items-center gap-2">
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-sm font-semibold text-primary-foreground">
+              N
+            </div>
+            <span className="font-semibold">NestScore</span>
+          </Link>
+          <nav className="flex items-center gap-1">
+            {navItems.map((item) => {
+              const isActive =
+                location.pathname === item.to ||
+                (item.to !== "/" && location.pathname.startsWith(item.to));
+              return (
+                <Link key={item.to} to={item.to}>
+                  <motion.div
+                    className={cn(
+                      "flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
+                      isActive
+                        ? "bg-accent text-foreground"
+                        : "text-muted-foreground hover:bg-accent/50 hover:text-foreground"
+                    )}
+                    whileTap={{ scale: 0.97 }}
+                  >
+                    <item.icon className="h-4 w-4" />
+                    <span>{item.label}</span>
+                  </motion.div>
+                </Link>
+              );
+            })}
+          </nav>
+        </div>
+      </header>
+
+      <main className="pb-20 md:pb-0 md:pt-14">
         <AnimatePresence mode="wait">
           <motion.div
             key={location.pathname}
@@ -34,94 +69,38 @@ function RootLayout() {
             animate="animate"
             exit="exit"
             variants={pageVariants}
-            transition={{ duration: 0.2, ease: "easeOut" }}
+            transition={{ duration: 0.15, ease: "easeOut" }}
           >
             <Outlet />
           </motion.div>
         </AnimatePresence>
       </main>
 
-      {/* Mobile bottom nav */}
-      <nav className="fixed bottom-0 left-0 right-0 z-50 border-t border-border bg-card/80 backdrop-blur-xl md:hidden">
-        <div className="flex items-center justify-around py-2">
+      {/* Mobile bottom nav - cleaner iOS-style */}
+      <nav className="fixed bottom-0 left-0 right-0 z-50 border-t border-border/50 bg-background/80 backdrop-blur-xl md:hidden">
+        <div className="mx-auto flex max-w-md items-center justify-around px-2 py-1">
           {navItems.map((item) => {
-            const isActive = location.pathname === item.to ||
+            const isActive =
+              location.pathname === item.to ||
               (item.to !== "/" && location.pathname.startsWith(item.to));
             return (
               <Link
                 key={item.to}
                 to={item.to}
                 className={cn(
-                  "flex flex-col items-center gap-1 px-4 py-2 text-xs transition-colors",
+                  "flex flex-1 flex-col items-center gap-0.5 py-2 text-[10px] font-medium transition-colors",
                   isActive ? "text-primary" : "text-muted-foreground"
                 )}
               >
-                <motion.div
-                  whileTap={{ scale: 0.9 }}
-                  className="flex flex-col items-center gap-1"
-                >
-                  <item.icon className="h-5 w-5" />
-                  <span>{item.label}</span>
-                </motion.div>
+                <item.icon
+                  className={cn("h-6 w-6", isActive && "stroke-[2.5px]")}
+                />
+                <span>{item.label}</span>
               </Link>
             );
           })}
         </div>
       </nav>
-
-      {/* Desktop sidebar */}
-      <nav className="fixed left-0 top-0 z-50 hidden h-full w-20 flex-col border-r border-border bg-card/80 backdrop-blur-xl md:flex">
-        <div className="flex flex-1 flex-col items-center gap-2 py-4">
-          <motion.div
-            className="mb-4 flex h-10 w-10 items-center justify-center rounded-xl bg-primary text-primary-foreground font-semibold text-lg"
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-          >
-            N
-          </motion.div>
-          {navItems.map((item) => {
-            const isActive = location.pathname === item.to ||
-              (item.to !== "/" && location.pathname.startsWith(item.to));
-            return (
-              <Link key={item.to} to={item.to}>
-                <motion.div
-                  className={cn(
-                    "flex flex-col items-center gap-1 rounded-xl px-3 py-2 text-xs transition-colors hover:bg-accent",
-                    isActive ? "bg-accent text-primary" : "text-muted-foreground"
-                  )}
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                >
-                  <item.icon className="h-5 w-5" />
-                  <span>{item.label}</span>
-                </motion.div>
-              </Link>
-            );
-          })}
-        </div>
-        <div className="p-4">
-          <Link to="/properties/new">
-            <motion.div
-              className="flex h-12 w-12 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg"
-              whileHover={{ scale: 1.1 }}
-              whileTap={{ scale: 0.9 }}
-            >
-              <Plus className="h-5 w-5" />
-            </motion.div>
-          </Link>
-        </div>
-      </nav>
-
-      {/* Mobile FAB */}
-      <Link to="/properties/new">
-        <motion.div
-          className="fixed bottom-24 right-4 z-50 flex h-14 w-14 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg md:hidden"
-          whileHover={{ scale: 1.1 }}
-          whileTap={{ scale: 0.9 }}
-        >
-          <Plus className="h-6 w-6" />
-        </motion.div>
-      </Link>
     </div>
   );
 }

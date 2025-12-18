@@ -3,7 +3,7 @@ import { useProperties } from "@/hooks/use-properties";
 import { useSettings } from "@/hooks/use-settings";
 import { calculatePropertyScore, getScoreColor } from "@/lib/scoring";
 import { MapContainer, TileLayer, Marker, Popup, Circle } from "react-leaflet";
-import { Icon, DivIcon } from "leaflet";
+import { DivIcon } from "leaflet";
 import { Card, CardContent } from "@/components/ui/card";
 import { ScoreGauge } from "@/components/scoring/score-gauge";
 import { useMemo } from "react";

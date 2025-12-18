@@ -1,4 +1,4 @@
-import type { Property, CategoryScore, PropertyScore, Settings } from "@/types";
+import type { Property, CategoryScore, PropertyScore } from "@/types";
 import { CATEGORIES } from "./constants";
 
 export function calculateCategoryScore(
