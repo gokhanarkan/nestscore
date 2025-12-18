@@ -112,7 +112,7 @@ function MapPage() {
   }
 
   return (
-    <div className="h-[calc(100vh-5rem)] md:h-screen">
+    <div className="h-[calc(100vh-8rem)] md:h-[calc(100vh-3.5rem)]">
       <MapContainer
         center={[mapCenter.lat, mapCenter.lng]}
         zoom={12}

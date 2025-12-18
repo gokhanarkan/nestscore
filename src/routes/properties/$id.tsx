@@ -134,7 +134,7 @@ function PropertyDetailPage() {
                   {getScoreLabel(score.overallScore)}
                 </span>
               </div>
-              <div className="mt-6 w-full">
+              <div className="mt-6 hidden w-full sm:block">
                 <ScoreRadar scores={score.categoryScores} size={200} />
               </div>
             </CardContent>
@@ -246,7 +246,7 @@ function PropertyDetailPage() {
                   value={notes}
                   onChange={(e) => handleNotesChange(e.target.value)}
                   className={cn(
-                    "min-h-50 w-full resize-none rounded-xl border border-border bg-background px-4 py-3 text-sm transition-all",
+                    "min-h-32 w-full resize-none rounded-xl border border-border bg-background px-4 py-3 text-sm transition-all sm:min-h-50",
                     "placeholder:text-muted-foreground/60",
                     "focus:border-primary focus:outline-none focus:ring-4 focus:ring-primary/10"
                   )}

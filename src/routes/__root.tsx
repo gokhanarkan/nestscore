@@ -2,6 +2,7 @@ import { Outlet, createRootRoute, Link, useLocation } from "@tanstack/react-rout
 import { motion, AnimatePresence } from "framer-motion";
 import { Home, List, GitCompare, Map, Settings } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { OnboardingModal, useOnboarding } from "@/components/onboarding/onboarding-modal";
 
 function NestScoreIcon({ className }: { className?: string }) {
   return (
@@ -41,9 +42,14 @@ const pageVariants = {
 
 function RootLayout() {
   const location = useLocation();
+  const { showOnboarding, completeOnboarding } = useOnboarding();
 
   return (
     <div className="min-h-screen bg-background">
+      {/* Onboarding Modal */}
+      <AnimatePresence>
+        {showOnboarding && <OnboardingModal onComplete={completeOnboarding} />}
+      </AnimatePresence>
       {/* Mobile top header */}
       <header className="fixed left-0 right-0 top-0 z-50 flex h-12 items-center border-b border-border/50 bg-background/80 backdrop-blur-xl md:hidden">
         <div className="mx-auto flex w-full items-center justify-center px-4">
