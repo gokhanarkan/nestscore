@@ -1,13 +1,15 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useSettings, updateSettings } from "@/hooks/use-settings";
 import { CATEGORIES } from "@/lib/constants";
+import { lookupPostcode } from "@/lib/postcode";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { db } from "@/lib/db";
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
+import { Loader2, Check, MapPin } from "lucide-react";
 
 export const Route = createFileRoute("/settings")({
   component: SettingsPage,
@@ -16,6 +18,12 @@ export const Route = createFileRoute("/settings")({
 function SettingsPage() {
   const settings = useSettings();
   const [exportStatus, setExportStatus] = useState<string | null>(null);
+  const [workPostcode, setWorkPostcode] = useState(settings.workPostcode ?? "");
+  const [postcodeStatus, setPostcodeStatus] = useState<"idle" | "checking" | "valid" | "invalid">("idle");
+
+  useEffect(() => {
+    setWorkPostcode(settings.workPostcode ?? "");
+  }, [settings.workPostcode]);
 
   const totalWeight = Object.values(settings.weights).reduce((a, b) => a + b, 0);
 
@@ -24,9 +32,36 @@ function SettingsPage() {
     await updateSettings({ weights: newWeights });
   };
 
-  const handleWorkPostcodeChange = async (postcode: string) => {
-    await updateSettings({ workPostcode: postcode.toUpperCase() });
-  };
+  const checkAndSavePostcode = useCallback(async (postcode: string) => {
+    if (postcode.length < 3) {
+      setPostcodeStatus("idle");
+      await updateSettings({ workPostcode: postcode, workCoordinates: undefined });
+      return;
+    }
+
+    setPostcodeStatus("checking");
+    const result = await lookupPostcode(postcode);
+
+    if (result) {
+      setPostcodeStatus("valid");
+      await updateSettings({
+        workPostcode: postcode.toUpperCase(),
+        workCoordinates: { lat: result.latitude, lng: result.longitude },
+      });
+    } else {
+      setPostcodeStatus("invalid");
+      await updateSettings({ workPostcode: postcode.toUpperCase(), workCoordinates: undefined });
+    }
+  }, []);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (workPostcode !== settings.workPostcode) {
+        checkAndSavePostcode(workPostcode);
+      }
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [workPostcode, settings.workPostcode, checkAndSavePostcode]);
 
   const handleExport = async () => {
     try {
@@ -41,7 +76,7 @@ function SettingsPage() {
       URL.revokeObjectURL(url);
       setExportStatus("Exported successfully!");
       setTimeout(() => setExportStatus(null), 3000);
-    } catch (error) {
+    } catch {
       setExportStatus("Export failed");
     }
   };
@@ -71,7 +106,7 @@ function SettingsPage() {
 
       setExportStatus(`Imported ${data.properties?.length ?? 0} properties!`);
       setTimeout(() => setExportStatus(null), 3000);
-    } catch (error) {
+    } catch {
       setExportStatus("Import failed - invalid file");
     }
 
@@ -131,12 +166,32 @@ function SettingsPage() {
           <CardContent>
             <div className="space-y-2">
               <Label htmlFor="work-postcode">Work Postcode</Label>
-              <Input
-                id="work-postcode"
-                placeholder="e.g., EC2A 4NE"
-                value={settings.workPostcode ?? ""}
-                onChange={(e) => handleWorkPostcodeChange(e.target.value)}
-              />
+              <div className="relative">
+                <Input
+                  id="work-postcode"
+                  placeholder="e.g., EC2A 4NE"
+                  value={workPostcode}
+                  onChange={(e) => setWorkPostcode(e.target.value.toUpperCase())}
+                  className="pr-10"
+                />
+                <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                  {postcodeStatus === "checking" && (
+                    <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+                  )}
+                  {postcodeStatus === "valid" && (
+                    <Check className="h-4 w-4 text-green-500" />
+                  )}
+                </div>
+              </div>
+              {postcodeStatus === "valid" && settings.workCoordinates && (
+                <p className="text-xs text-muted-foreground">
+                  <MapPin className="mr-1 inline h-3 w-3" />
+                  Location saved
+                </p>
+              )}
+              {postcodeStatus === "invalid" && workPostcode.length >= 3 && (
+                <p className="text-xs text-destructive">Invalid postcode</p>
+              )}
             </div>
           </CardContent>
         </Card>
