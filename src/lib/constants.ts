@@ -476,3 +476,10 @@ export const CATEGORIES: Category[] = [
 export function getCategoryById(id: string): Category | undefined {
   return CATEGORIES.find((c) => c.id === id);
 }
+
+export const PROPERTY_TAGS = [
+  { id: "shortlisted", label: "Shortlisted", color: "#22c55e", icon: "Star" },
+  { id: "viewed", label: "Viewed", color: "#3b82f6", icon: "Eye" },
+  { id: "rejected", label: "Rejected", color: "#ef4444", icon: "XCircle" },
+  { id: "favourite", label: "Favourite", color: "#f59e0b", icon: "Heart" },
+] as const;

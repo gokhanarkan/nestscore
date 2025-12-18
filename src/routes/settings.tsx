@@ -8,8 +8,10 @@ import { db, defaultSettings } from "@/lib/db";
 import { exportToCSV, downloadCSV } from "@/lib/export";
 import { loadSampleProperties, removeSampleProperties, hasSampleProperties } from "@/lib/sample-data";
 import { useState, useEffect, useCallback } from "react";
-import { Loader2, Check, MapPin, Settings as SettingsIcon, Scale, Briefcase, Database, Download, Upload, Trash2, AlertCircle, Sparkles, X, RotateCcw } from "lucide-react";
+import { Loader2, Check, MapPin, Settings as SettingsIcon, Scale, Briefcase, Database, Download, Upload, Trash2, AlertCircle, Sparkles, X, RotateCcw, Share2 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { ShareModal } from "@/components/sharing/share-modal";
+import { createSettingsShareData, type ShareData } from "@/lib/sharing";
 
 export const Route = createFileRoute("/settings")({
   component: SettingsPage,
@@ -23,6 +25,8 @@ function SettingsPage() {
   const [focusedField, setFocusedField] = useState<string | null>(null);
   const [hasSamples, setHasSamples] = useState(false);
   const [loadingSamples, setLoadingSamples] = useState(false);
+  const [shareModalOpen, setShareModalOpen] = useState(false);
+  const [shareData, setShareData] = useState<ShareData | null>(null);
 
   useEffect(() => {
     setWorkPostcode(settings.workPostcode ?? "");
@@ -243,7 +247,7 @@ function SettingsPage() {
                 ))}
               </div>
 
-              <div className="mt-6 border-t border-border pt-4">
+              <div className="mt-6 flex gap-2 border-t border-border pt-4">
                 <Button
                   variant="outline"
                   size="sm"
@@ -252,6 +256,18 @@ function SettingsPage() {
                 >
                   <RotateCcw className="h-4 w-4" />
                   Reset to Defaults
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    setShareData(createSettingsShareData(settings));
+                    setShareModalOpen(true);
+                  }}
+                  className="gap-2"
+                >
+                  <Share2 className="h-4 w-4" />
+                  Share Weights
                 </Button>
               </div>
             </CardContent>
@@ -431,6 +447,15 @@ function SettingsPage() {
           </Card>
         </div>
       </div>
+
+      {/* Share Modal */}
+      <ShareModal
+        open={shareModalOpen}
+        onOpenChange={setShareModalOpen}
+        shareData={shareData}
+        title="Share Category Weights"
+        description="Share your scoring preferences with others."
+      />
     </div>
   );
 }

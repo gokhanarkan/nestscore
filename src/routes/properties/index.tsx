@@ -2,12 +2,21 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useProperties } from "@/hooks/use-properties";
 import { useSettings } from "@/hooks/use-settings";
 import { calculatePropertyScore, getScoreLabel, getScoreColor } from "@/lib/scoring";
+import { PROPERTY_TAGS } from "@/lib/constants";
 import { ScoreGauge } from "@/components/scoring/score-gauge";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Search, List, Plus, MapPin, ChevronRight, Building2 } from "lucide-react";
+import { Search, List, Plus, MapPin, ChevronRight, Building2, Star, Eye, XCircle, Heart } from "lucide-react";
 import { useState, useMemo } from "react";
 import { cn } from "@/lib/utils";
+import type { PropertyTag } from "@/types";
+
+const TAG_ICONS = {
+  shortlisted: Star,
+  viewed: Eye,
+  rejected: XCircle,
+  favourite: Heart,
+} as const;
 
 export const Route = createFileRoute("/properties/")({
   component: PropertiesPage,
@@ -18,17 +27,29 @@ function PropertiesPage() {
   const settings = useSettings();
   const [search, setSearch] = useState("");
   const [focusedSearch, setFocusedSearch] = useState(false);
+  const [tagFilter, setTagFilter] = useState<PropertyTag | null>(null);
 
   const filteredProperties = useMemo(() => {
-    if (!search.trim()) return properties;
-    const query = search.toLowerCase();
-    return properties.filter(
-      (p) =>
-        p.name.toLowerCase().includes(query) ||
-        p.postcode.toLowerCase().includes(query) ||
-        p.address.toLowerCase().includes(query)
-    );
-  }, [properties, search]);
+    let result = properties;
+
+    // Filter by search
+    if (search.trim()) {
+      const query = search.toLowerCase();
+      result = result.filter(
+        (p) =>
+          p.name.toLowerCase().includes(query) ||
+          p.postcode.toLowerCase().includes(query) ||
+          p.address.toLowerCase().includes(query)
+      );
+    }
+
+    // Filter by tag
+    if (tagFilter) {
+      result = result.filter((p) => p.tags?.includes(tagFilter));
+    }
+
+    return result;
+  }, [properties, search, tagFilter]);
 
   return (
     <div className="min-h-screen bg-linear-to-b from-muted/20 to-background">
@@ -56,7 +77,7 @@ function PropertiesPage() {
 
         {/* Search */}
         {properties.length > 0 && (
-          <div className="mb-6">
+          <div className="mb-6 space-y-3">
             <div
               className={cn(
                 "flex items-center gap-3 rounded-xl border bg-card px-4 py-3 transition-all",
@@ -83,6 +104,46 @@ function PropertiesPage() {
                   Clear
                 </button>
               )}
+            </div>
+
+            {/* Tag Filters */}
+            <div className="flex flex-wrap gap-2">
+              <button
+                onClick={() => setTagFilter(null)}
+                className={cn(
+                  "rounded-full px-3 py-1.5 text-xs font-medium transition-all",
+                  tagFilter === null
+                    ? "bg-primary text-primary-foreground"
+                    : "bg-muted text-muted-foreground hover:bg-muted/80"
+                )}
+              >
+                All
+              </button>
+              {PROPERTY_TAGS.map((tag) => {
+                const TagIcon = TAG_ICONS[tag.id as keyof typeof TAG_ICONS];
+                const isActive = tagFilter === tag.id;
+                const count = properties.filter((p) => p.tags?.includes(tag.id as PropertyTag)).length;
+                if (count === 0) return null;
+                return (
+                  <button
+                    key={tag.id}
+                    onClick={() => setTagFilter(isActive ? null : tag.id as PropertyTag)}
+                    className={cn(
+                      "flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium transition-all",
+                      isActive
+                        ? "text-white"
+                        : "bg-muted text-muted-foreground hover:bg-muted/80"
+                    )}
+                    style={isActive ? { backgroundColor: tag.color } : undefined}
+                  >
+                    <TagIcon className="h-3 w-3" />
+                    {tag.label}
+                    <span className={cn("tabular-nums", isActive ? "opacity-80" : "opacity-60")}>
+                      {count}
+                    </span>
+                  </button>
+                );
+              })}
             </div>
           </div>
         )}
@@ -117,7 +178,7 @@ function PropertiesPage() {
                             {getScoreLabel(score.overallScore)}
                           </span>
                         </div>
-                        <div className="mt-1 flex items-center gap-3 text-sm text-muted-foreground">
+                        <div className="mt-1 flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
                           <span className="flex items-center gap-1 truncate">
                             <MapPin className="h-3.5 w-3.5 shrink-0" />
                             {property.postcode}
@@ -126,6 +187,25 @@ function PropertiesPage() {
                             <span className="font-medium text-primary">
                               £{property.price.toLocaleString()}
                             </span>
+                          )}
+                          {property.tags && property.tags.length > 0 && (
+                            <div className="flex gap-1">
+                              {property.tags.map((tagId) => {
+                                const tag = PROPERTY_TAGS.find((t) => t.id === tagId);
+                                if (!tag) return null;
+                                const TagIcon = TAG_ICONS[tagId as keyof typeof TAG_ICONS];
+                                return (
+                                  <span
+                                    key={tagId}
+                                    className="flex h-5 w-5 items-center justify-center rounded-full"
+                                    style={{ backgroundColor: `${tag.color}20`, color: tag.color }}
+                                    title={tag.label}
+                                  >
+                                    <TagIcon className="h-3 w-3" />
+                                  </span>
+                                );
+                              })}
+                            </div>
                           )}
                         </div>
                       </div>

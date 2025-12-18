@@ -3,7 +3,7 @@ import { useState, useEffect, useCallback } from "react";
 import { addProperty } from "@/hooks/use-properties";
 import { lookupPostcode, autocompletePostcode } from "@/lib/postcode";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Loader2, MapPin, Check, Home, PoundSterling, Building2, MapPinned } from "lucide-react";
+import { ArrowLeft, Loader2, MapPin, Check, Home, PoundSterling, Building2, MapPinned, Link as LinkIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { Coordinates } from "@/types";
 
@@ -26,6 +26,7 @@ function NewPropertyPage() {
     address: "",
     price: "",
     agent: "",
+    listingUrl: "",
   });
 
   const checkPostcode = useCallback(async (postcode: string) => {
@@ -81,6 +82,7 @@ function NewPropertyPage() {
         address: form.address.trim(),
         price: form.price ? parseInt(form.price.replace(/,/g, ""), 10) : 0,
         agent: form.agent.trim(),
+        listingUrl: form.listingUrl.trim() || undefined,
         answers: {},
         notes: "",
         coordinates,
@@ -326,6 +328,36 @@ function NewPropertyPage() {
                 value={form.agent}
                 onChange={(e) => updateField("agent", e.target.value)}
                 onFocus={() => setFocusedField("agent")}
+                onBlur={() => setFocusedField(null)}
+                className="flex-1 bg-transparent text-base outline-none placeholder:text-muted-foreground/60"
+              />
+            </div>
+          </div>
+
+          {/* Listing URL */}
+          <div className="group">
+            <label
+              htmlFor="listingUrl"
+              className="mb-2 block text-sm font-medium text-foreground"
+            >
+              Listing URL <span className="text-muted-foreground">(optional)</span>
+            </label>
+            <div
+              className={cn(
+                "flex items-center gap-3 rounded-xl border bg-card px-4 py-3 transition-all",
+                focusedField === "listingUrl"
+                  ? "border-primary ring-4 ring-primary/10"
+                  : "border-border hover:border-muted-foreground/30"
+              )}
+            >
+              <LinkIcon className="h-5 w-5 shrink-0 text-muted-foreground" />
+              <input
+                id="listingUrl"
+                type="url"
+                placeholder="e.g., https://rightmove.co.uk/..."
+                value={form.listingUrl}
+                onChange={(e) => updateField("listingUrl", e.target.value)}
+                onFocus={() => setFocusedField("listingUrl")}
                 onBlur={() => setFocusedField(null)}
                 className="flex-1 bg-transparent text-base outline-none placeholder:text-muted-foreground/60"
               />

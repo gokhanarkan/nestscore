@@ -9,6 +9,7 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from "./routes/__root"
+import { Route as ShareRouteImport } from "./routes/share"
 import { Route as SettingsRouteImport } from "./routes/settings"
 import { Route as MapRouteImport } from "./routes/map"
 import { Route as CompareRouteImport } from "./routes/compare"
@@ -17,6 +18,11 @@ import { Route as PropertiesIndexRouteImport } from "./routes/properties/index"
 import { Route as PropertiesNewRouteImport } from "./routes/properties/new"
 import { Route as PropertiesIdRouteImport } from "./routes/properties/$id"
 
+const ShareRoute = ShareRouteImport.update({
+  id: "/share",
+  path: "/share",
+  getParentRoute: () => rootRouteImport,
+} as any)
 const SettingsRoute = SettingsRouteImport.update({
   id: "/settings",
   path: "/settings",
@@ -58,6 +64,7 @@ export interface FileRoutesByFullPath {
   "/compare": typeof CompareRoute
   "/map": typeof MapRoute
   "/settings": typeof SettingsRoute
+  "/share": typeof ShareRoute
   "/properties/$id": typeof PropertiesIdRoute
   "/properties/new": typeof PropertiesNewRoute
   "/properties": typeof PropertiesIndexRoute
@@ -67,6 +74,7 @@ export interface FileRoutesByTo {
   "/compare": typeof CompareRoute
   "/map": typeof MapRoute
   "/settings": typeof SettingsRoute
+  "/share": typeof ShareRoute
   "/properties/$id": typeof PropertiesIdRoute
   "/properties/new": typeof PropertiesNewRoute
   "/properties": typeof PropertiesIndexRoute
@@ -77,6 +85,7 @@ export interface FileRoutesById {
   "/compare": typeof CompareRoute
   "/map": typeof MapRoute
   "/settings": typeof SettingsRoute
+  "/share": typeof ShareRoute
   "/properties/$id": typeof PropertiesIdRoute
   "/properties/new": typeof PropertiesNewRoute
   "/properties/": typeof PropertiesIndexRoute
@@ -88,6 +97,7 @@ export interface FileRouteTypes {
     | "/compare"
     | "/map"
     | "/settings"
+    | "/share"
     | "/properties/$id"
     | "/properties/new"
     | "/properties"
@@ -97,6 +107,7 @@ export interface FileRouteTypes {
     | "/compare"
     | "/map"
     | "/settings"
+    | "/share"
     | "/properties/$id"
     | "/properties/new"
     | "/properties"
@@ -106,6 +117,7 @@ export interface FileRouteTypes {
     | "/compare"
     | "/map"
     | "/settings"
+    | "/share"
     | "/properties/$id"
     | "/properties/new"
     | "/properties/"
@@ -116,6 +128,7 @@ export interface RootRouteChildren {
   CompareRoute: typeof CompareRoute
   MapRoute: typeof MapRoute
   SettingsRoute: typeof SettingsRoute
+  ShareRoute: typeof ShareRoute
   PropertiesIdRoute: typeof PropertiesIdRoute
   PropertiesNewRoute: typeof PropertiesNewRoute
   PropertiesIndexRoute: typeof PropertiesIndexRoute
@@ -123,6 +136,13 @@ export interface RootRouteChildren {
 
 declare module "@tanstack/react-router" {
   interface FileRoutesByPath {
+    "/share": {
+      id: "/share"
+      path: "/share"
+      fullPath: "/share"
+      preLoaderRoute: typeof ShareRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     "/settings": {
       id: "/settings"
       path: "/settings"
@@ -180,6 +200,7 @@ const rootRouteChildren: RootRouteChildren = {
   CompareRoute: CompareRoute,
   MapRoute: MapRoute,
   SettingsRoute: SettingsRoute,
+  ShareRoute: ShareRoute,
   PropertiesIdRoute: PropertiesIdRoute,
   PropertiesNewRoute: PropertiesNewRoute,
   PropertiesIndexRoute: PropertiesIndexRoute,

@@ -3,6 +3,8 @@ export interface Coordinates {
   lng: number;
 }
 
+export type PropertyTag = "shortlisted" | "viewed" | "rejected" | "favourite";
+
 export interface Property {
   id?: number;
   name: string;
@@ -10,6 +12,8 @@ export interface Property {
   postcode: string;
   price: number;
   agent?: string;
+  listingUrl?: string;
+  tags?: PropertyTag[];
   viewingDate?: string;
   answers: Record<string, string | boolean | number>;
   notes: string;

@@ -2,7 +2,7 @@ import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useProperty, updateProperty, deleteProperty } from "@/hooks/use-properties";
 import { useSettings } from "@/hooks/use-settings";
 import { calculatePropertyScore, getScoreLabel } from "@/lib/scoring";
-import { CATEGORIES } from "@/lib/constants";
+import { CATEGORIES, PROPERTY_TAGS } from "@/lib/constants";
 import { ScoreGauge } from "@/components/scoring/score-gauge";
 import { ScoreRadar } from "@/components/visualization/score-radar";
 import { CategorySection } from "@/components/property/category-section";
@@ -17,10 +17,20 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { ArrowLeft, Trash2, MapPin, Navigation, StickyNote, PoundSterling, Building2 } from "lucide-react";
+import { ArrowLeft, Trash2, MapPin, Navigation, StickyNote, PoundSterling, Building2, ExternalLink, Star, Eye, XCircle, Heart, Share2 } from "lucide-react";
+import type { PropertyTag } from "@/types";
+import { ShareModal } from "@/components/sharing/share-modal";
+import { createPropertyShareData, type ShareData } from "@/lib/sharing";
 import { useState, useMemo, useRef, useEffect } from "react";
 import { calculateDistance, formatDistance } from "@/lib/postcode";
 import { cn } from "@/lib/utils";
+
+const TAG_ICONS = {
+  shortlisted: Star,
+  viewed: Eye,
+  rejected: XCircle,
+  favourite: Heart,
+} as const;
 
 export const Route = createFileRoute("/properties/$id")({
   component: PropertyDetailPage,
@@ -34,6 +44,8 @@ function PropertyDetailPage() {
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [notes, setNotes] = useState("");
   const notesTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [shareModalOpen, setShareModalOpen] = useState(false);
+  const [shareData, setShareData] = useState<ShareData | null>(null);
 
   useEffect(() => {
     if (property) {
@@ -79,6 +91,14 @@ function PropertyDetailPage() {
     navigate({ to: "/properties" });
   };
 
+  const handleToggleTag = async (tagId: PropertyTag) => {
+    const currentTags = property.tags || [];
+    const newTags = currentTags.includes(tagId)
+      ? currentTags.filter((t) => t !== tagId)
+      : [...currentTags, tagId];
+    await updateProperty(property.id!, { tags: newTags });
+  };
+
   return (
     <div className="min-h-screen">
       {/* Header */}
@@ -93,13 +113,26 @@ function PropertyDetailPage() {
               <span className="hidden sm:inline">Back to Properties</span>
               <span className="sm:hidden">Back</span>
             </Link>
-            <Dialog open={deleteOpen} onOpenChange={setDeleteOpen}>
-              <DialogTrigger asChild>
-                <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-destructive">
-                  <Trash2 className="h-4 w-4" />
-                  <span className="ml-2 hidden sm:inline">Delete</span>
-                </Button>
-              </DialogTrigger>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                  setShareData(createPropertyShareData(property));
+                  setShareModalOpen(true);
+                }}
+                className="text-muted-foreground hover:text-primary"
+              >
+                <Share2 className="h-4 w-4" />
+                <span className="ml-2 hidden sm:inline">Share</span>
+              </Button>
+              <Dialog open={deleteOpen} onOpenChange={setDeleteOpen}>
+                <DialogTrigger asChild>
+                  <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-destructive">
+                    <Trash2 className="h-4 w-4" />
+                    <span className="ml-2 hidden sm:inline">Delete</span>
+                  </Button>
+                </DialogTrigger>
               <DialogContent>
                 <DialogHeader>
                   <DialogTitle>Delete Property</DialogTitle>
@@ -116,7 +149,8 @@ function PropertyDetailPage() {
                   </Button>
                 </DialogFooter>
               </DialogContent>
-            </Dialog>
+              </Dialog>
+            </div>
           </div>
         </div>
       </div>
@@ -144,7 +178,32 @@ function PropertyDetailPage() {
           <Card className="border-0 bg-card shadow-sm lg:col-span-2">
             <CardContent className="p-6">
               <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">{property.name}</h1>
-              <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2 text-muted-foreground">
+
+              {/* Tags */}
+              <div className="mt-3 flex flex-wrap gap-2">
+                {PROPERTY_TAGS.map((tag) => {
+                  const TagIcon = TAG_ICONS[tag.id as keyof typeof TAG_ICONS];
+                  const isActive = property.tags?.includes(tag.id as PropertyTag);
+                  return (
+                    <button
+                      key={tag.id}
+                      onClick={() => handleToggleTag(tag.id as PropertyTag)}
+                      className={cn(
+                        "flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium transition-all",
+                        isActive
+                          ? "border-transparent text-white"
+                          : "border-border bg-background text-muted-foreground hover:border-muted-foreground/50"
+                      )}
+                      style={isActive ? { backgroundColor: tag.color } : undefined}
+                    >
+                      <TagIcon className="h-3.5 w-3.5" />
+                      {tag.label}
+                    </button>
+                  );
+                })}
+              </div>
+
+              <div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-2 text-muted-foreground">
                 <span className="flex items-center gap-1.5">
                   <MapPin className="h-4 w-4" />
                   {property.address || property.postcode}
@@ -154,6 +213,17 @@ function PropertyDetailPage() {
                     <Building2 className="h-4 w-4" />
                     {property.agent}
                   </span>
+                )}
+                {property.listingUrl && (
+                  <a
+                    href={property.listingUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-1.5 text-primary hover:underline"
+                  >
+                    <ExternalLink className="h-4 w-4" />
+                    View Listing
+                  </a>
                 )}
               </div>
               {property.price > 0 && (
@@ -259,6 +329,15 @@ function PropertyDetailPage() {
           </div>
         </div>
       </div>
+
+      {/* Share Modal */}
+      <ShareModal
+        open={shareModalOpen}
+        onOpenChange={setShareModalOpen}
+        shareData={shareData}
+        title="Share Property"
+        description="Share this property with others."
+      />
     </div>
   );
 }
