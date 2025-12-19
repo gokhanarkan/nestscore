@@ -2,6 +2,8 @@
 
 A property evaluation tool for London house hunters. Score, compare, and track properties with a consistent framework.
 
+[Read the blog post](https://gokhanarkan.com/blog/nestscore-property-evaluation/)
+
 ## Features
 
 - **Structured Evaluation**: 37 questions across 10 categories (Location, Amenities, Safety, Building, Utilities, Internet, Energy, Interior, Outdoor, Legal)
